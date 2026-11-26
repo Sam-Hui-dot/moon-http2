@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>moon-http2 — Zero-Upload RFC 9113 HTTP/2 &amp; HPACK Workbench</title>
+  <style>
+    :root { --bg:#090d16; --panel:#111827; --border:#1f2937; --text:#f3f4f6; --muted:#9ca3af; --accent:#10b981; --accent2:#38bdf8; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:ui-sans-serif,system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); }
+    header { padding:18px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+    h1 { margin:0; font-size:20px; }
+    .sub { color:var(--muted); font-size:13px; margin-top:4px; }
+    .pill { font-size:12px; padding:4px 10px; border-radius:999px; background:#064e3b; color:#6ee7b7; border:1px solid #047857; }
+    main { max-width:1280px; margin:0 auto; padding:20px 24px; display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    @media (max-width:960px) { main { grid-template-columns:1fr; } }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px; display:flex; flex-direction:column; gap:12px; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    button, select { background:#1f2937; color:var(--text); border:1px solid #374151; border-radius:6px; padding:7px 12px; cursor:pointer; font-size:13px; }
+    button.primary { background:var(--accent); color:#022c22; border-color:var(--accent); font-weight:600; }
+    textarea { width:100%; min-height:130px; background:#030712; color:#e5e7eb; border:1px solid var(--border); border-radius:6px; padding:10px; font-family:ui-monospace,monospace; font-size:12px; resize:vertical; }
+    .svg-box { overflow-x:auto; background:#030712; border:1px solid var(--border); border-radius:8px; padding:8px; }
+    .kpi { display:flex; gap:12px; flex-wrap:wrap; font-size:12px; color:var(--muted); }
+    .kpi strong { color:var(--accent2); }
+    pre { margin:0; padding:10px; background:#030712; border:1px solid var(--border); border-radius:6px; overflow-x:auto; font-size:12px; color:#cbd5e1; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>moon-http2 Studio</h1>
+      <div class="sub">Pure-MoonBit Sans-I/O RFC 9113 HTTP/2 &amp; RFC 7541 HPACK Protocol Engine — 100% Client-Side Zero-Upload</div>
+    </div>
+    <span class="pill">Zero-Upload &middot; Pure MoonBit &middot; h2spec Verified</span>
+  </header>
+  <main>
+    <section class="card">
+      <div class="row" style="justify-content:space-between;">
+        <strong>1. HTTP/2 Wire Frame Stream Analyzer</strong>
+        <div class="row">
+          <select id="preset-select">
+            <option value="multiplex">Multiplexed 3-Stream RPC + POST + PING</option>
+            <option value="continuation">HEADERS + CONTINUATION Fragmentation</option>
+            <option value="protocol_error">Protocol Error (Even Stream ID -&gt; GOAWAY)</option>
+          </select>
+          <button id="run-h2" class="primary">Decode &amp; Simulate</button>
+        </div>
+      </div>
+      <textarea id="hex-input" spellcheck="false"></textarea>
+      <div id="h2-kpi" class="kpi"></div>
+      <div id="timeline-box" class="svg-box"></div>
+      <pre id="trace-md"></pre>
+    </section>
+
+    <section class="card">
+      <div class="row" style="justify-content:space-between;">
+        <strong>2. RFC 7541 HPACK Dynamic Table &amp; Huffman Lab</strong>
+        <button id="run-hpack" class="primary">Encode &amp; Verify</button>
+      </div>
+      <textarea id="hpack-input" spellcheck="false">[
+  [[":method","GET"],[":scheme","https"],[":path","/api/v1/orders"],[":authority","shop.example.com"],["authorization","Bearer moonbit_token_001"]],
+  [[":method","GET"],[":scheme","https"],[":path","/api/v1/orders"],[":authority","shop.example.com"],["authorization","Bearer moonbit_token_001"],["cache-control","no-cache"]],
+  [[":method","POST"],[":scheme","https"],[":path","/api/v1/orders"],[":authority","shop.example.com"],["authorization","Bearer moonbit_token_001"],["content-type","application/json"]]
+]</textarea>
+      <div id="hpack-box" class="svg-box"></div>
+      <pre id="hpack-out"></pre>
+    </section>
+  </main>
+
+  <script src="moon-http2.js"></script>
+  <script>
+    const presetSel = document.getElementById("preset-select");
+    const hexInput = document.getElementById("hex-input");
+    const h2Kpi = document.getElementById("h2-kpi");
+    const timelineBox = document.getElementById("timeline-box");
+    const traceMd = document.getElementById("trace-md");
+    const hpackInput = document.getElementById("hpack-input");
+    const hpackBox = document.getElementById("hpack-box");
+    const hpackOut = document.getElementById("hpack-out");
+
+    function runH2() {
+      const res = globalThis.MoonHttp2.analyzeHex(hexInput.value);
+      if (!res.ok) {
+        h2Kpi.innerHTML = `<span style="color:#f43f5e;">Error: ${res.error}</span>`;
+        return;
+      }
+      h2Kpi.innerHTML = `<span>Frames: <strong>${res.trace.length}</strong></span><span>Completed Requests: <strong>${res.completed_requests}</strong></span><span>Connection Closed: <strong>${res.closed}</strong></span>`;
+      timelineBox.innerHTML = res.timeline_svg;
+      traceMd.textContent = res.markdown;
+    }
+
+    function runHpack() {
+      try {
+        const reqs = JSON.parse(hpackInput.value);
+        const res = globalThis.MoonHttp2.hpackDemo(reqs);
+        if (!res.ok) { hpackOut.textContent = res.error; return; }
+        hpackBox.innerHTML = res.hpack_svg;
+        hpackOut.textContent = res.blocks.map((b, i) => `Req #${i+1}: ${b.raw_bytes}B -> ${b.encoded_bytes}B\n  hex: ${b.hex}`).join("\n");
+      } catch (e) {
+        hpackOut.textContent = String(e);
+      }
+    }
+
+    presetSel.addEventListener("change", () => {
+      hexInput.value = globalThis.MoonHttp2.buildPresetHex(presetSel.value);
+      runH2();
+    });
+    document.getElementById("run-h2").addEventListener("click", runH2);
+    document.getElementById("run-hpack").addEventListener("click", runHpack);
+
+    hexInput.value = globalThis.MoonHttp2.buildPresetHex("multiplex");
+    runH2();
+    runHpack();
+  </script>
+</body>
+</html>

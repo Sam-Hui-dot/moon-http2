@@ -1,0 +1,9 @@
+import {
+  "Sam-Hui-dot/moon-http2" @h2,
+  "moonbitlang/core/buffer",
+  "moonbitlang/core/json",
+}
+
+pkgtype(kind: "executable")
+
+supported_targets = "js"
