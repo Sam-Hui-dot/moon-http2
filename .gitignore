@@ -4,3 +4,4 @@ demo/.oracle-cache/
 demo/out/
 demo/__pycache__/
 docs/moon-http2.js
+demo/.h2-cache/
