@@ -54,8 +54,8 @@ fn H2Stream::new(
     received_data_bytes: 0L,
     headers_received: false,
     req_headers: [],
-    req_body: @buffer.Buffer(size_hint=64),
-    pending_body: Bytes::new(0),
+    req_body: @buffer.Buffer(),
+    pending_body: b"",
     pending_offset: 0,
     pending_end_stream: false,
   }

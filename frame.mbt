@@ -92,14 +92,14 @@ pub(all) enum H2Frame {
     stream_id~ : UInt32,
     end_stream~ : Bool,
     data~ : Bytes,
-    flow_len~ : Int32
+    flow_len~ : Int32,
   )
   Headers(
     stream_id~ : UInt32,
     end_stream~ : Bool,
     end_headers~ : Bool,
     priority~ : PrioritySpec?,
-    fragment~ : Bytes
+    fragment~ : Bytes,
   )
   Priority(stream_id~ : UInt32, spec~ : PrioritySpec)
   RstStream(stream_id~ : UInt32, code~ : H2ErrorCode)
@@ -108,7 +108,7 @@ pub(all) enum H2Frame {
     stream_id~ : UInt32,
     promised_stream_id~ : UInt32,
     end_headers~ : Bool,
-    fragment~ : Bytes
+    fragment~ : Bytes,
   )
   Ping(ack~ : Bool, opaque_data~ : Bytes)
   GoAway(last_stream_id~ : UInt32, code~ : H2ErrorCode, debug_data~ : Bytes)
@@ -118,7 +118,7 @@ pub(all) enum H2Frame {
     frame_type~ : Byte,
     flags~ : Byte,
     stream_id~ : UInt32,
-    payload~ : Bytes
+    payload~ : Bytes,
   )
 }
 
@@ -211,7 +211,7 @@ fn write_u32_be(buf : @buffer.Buffer, v : UInt32) -> Unit {
 ///|
 /// Convert an ASCII string into raw `Bytes`.
 pub fn ascii_to_bytes(s : String) -> Bytes {
-  let buf = @buffer.Buffer(size_hint=s.length())
+  let buf = @buffer.Buffer()
   for ch in s {
     buf.write_byte((ch.to_int() & 0xff).to_byte())
   }
@@ -248,7 +248,7 @@ pub fn hex_to_bytes(hex : String) -> Bytes raise H2Error {
   if nibbles.length() % 2 != 0 {
     raise InvalidInput("hex input must have even number of digits")
   }
-  let buf = @buffer.Buffer(size_hint=nibbles.length() / 2)
+  let buf = @buffer.Buffer()
   let mut i = 0
   while i < nibbles.length() {
     buf.write_byte(((nibbles[i] << 4) | nibbles[i + 1]).to_byte())
@@ -273,9 +273,9 @@ pub fn bytes_to_hex(bs : Bytes) -> String {
 ///|
 fn slice_bytes(bs : Bytes, start : Int32, end : Int32) -> Bytes {
   if end <= start {
-    return Bytes::new(0)
+    return b""
   }
-  let buf = @buffer.Buffer(size_hint=end - start)
+  let buf = @buffer.Buffer()
   buf.write_bytesview(bs[start:end])
   buf.to_bytes()
 }
@@ -419,7 +419,7 @@ pub fn encode_frame_into(buf : @buffer.Buffer, frame : H2Frame) -> Unit {
 ///|
 /// Encode a single `H2Frame` to wire bytes.
 pub fn encode_frame(frame : H2Frame) -> Bytes {
-  let buf = @buffer.Buffer(size_hint=32)
+  let buf = @buffer.Buffer()
   encode_frame_into(buf, frame)
   buf.to_bytes()
 }

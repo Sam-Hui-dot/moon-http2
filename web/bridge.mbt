@@ -120,7 +120,7 @@ pub fn hpack_demo_json(requests_json : String) -> String {
 /// Build a canonical multi-stream HTTP/2 client wire scenario in hex for browser presets.
 pub fn build_preset_hex(scenario : String) -> String {
   let enc = @h2.HpackEncoder::new(use_huffman=true)
-  let buf = @buffer.Buffer(size_hint=256)
+  let buf = @buffer.Buffer()
   buf.write_bytesview(@h2.ascii_to_bytes(@h2.CLIENT_PREFACE_STR)[:])
   @h2.encode_frame_into(buf, Settings(ack=false, params=[]))
   match scenario {

@@ -6,20 +6,20 @@ pub(all) enum H2Event {
   RequestHeaders(
     stream_id~ : UInt32,
     headers~ : Array[HeaderField],
-    end_stream~ : Bool
+    end_stream~ : Bool,
   )
   RequestData(stream_id~ : UInt32, data~ : Bytes, end_stream~ : Bool)
   RequestComplete(
     stream_id~ : UInt32,
     headers~ : Array[HeaderField],
-    body~ : Bytes
+    body~ : Bytes,
   )
   StreamReset(stream_id~ : UInt32, code~ : H2ErrorCode)
   PingReceived(ack~ : Bool, opaque_data~ : Bytes)
   GoAwayReceived(
     last_stream_id~ : UInt32,
     code~ : H2ErrorCode,
-    debug_data~ : Bytes
+    debug_data~ : Bytes,
   )
   WindowUpdated(stream_id~ : UInt32, increment~ : UInt32)
 }
@@ -86,8 +86,8 @@ pub fn H2Connection::new_server(
 ) -> H2Connection {
   let conn : H2Connection = {
     preface_checked: false,
-    recv_buf: @buffer.Buffer(size_hint=256),
-    send_buf: @buffer.Buffer(size_hint=256),
+    recv_buf: @buffer.Buffer(),
+    send_buf: @buffer.Buffer(),
     hpack_dec: HpackDecoder::new(),
     hpack_enc: HpackEncoder::new(),
     streams: Map([]),
@@ -102,7 +102,7 @@ pub fn H2Connection::new_server(
     conn_recv_consumed: 0,
     expect_continuation_stream: None,
     continuation_end_stream: false,
-    continuation_buf: @buffer.Buffer(size_hint=128),
+    continuation_buf: @buffer.Buffer(),
     goaway_sent: false,
     closed: false,
     trace: [],
@@ -200,7 +200,7 @@ pub fn H2Connection::send_response(
   stream_id : UInt32,
   status : Int32,
   extra_headers~ : Array[HeaderField] = [],
-  body~ : Bytes = Bytes::new(0),
+  body~ : Bytes = b"",
 ) -> Unit {
   let headers : Array[HeaderField] = [header_field(":status", "\{status}")]
   for h in extra_headers {
